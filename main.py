@@ -36,12 +36,8 @@ def get_web_info(url):
     
     return ret
 
-# web情報を取得
-url = 'https://apps.apple.com/jp/iphone/charts/36?chart=top-free'
-res = get_web_info(url)
-
-# web情報の抽出
-if res is not None:
+# web情報抽出関数
+def extract_web_info(res):
     res.encoding = "utf-8"
     soup = BeautifulSoup(res.text, "html.parser")
     items = soup.find_all("li")
@@ -58,22 +54,39 @@ if res is not None:
         
         app_name.append(label)
 
-    # csvファイル出力
+    return app_name
+
+# web情報出力関数
+def output_web_info(app_name):
+    # 現在の日付を取得
     dt_now = datetime.datetime.now()
     date = dt_now.strftime('%Y%m%d')
 
+    # outputフォルダの存在確認・新規作成
     folder_path = os.path.join(os.getcwd(), "output")
     file_path = os.path.join(folder_path, date) + ".csv"
     
     if not os.path.exists(folder_path):
-        os.mkdir(folder_path)   # outputフォルダ新規作成
+        os.mkdir(folder_path)   # outputフォルダ作成
 
+    # データフレーム作成
     df = pd.DataFrame(app_name, columns=["アプリ名"])
     df.insert(0, "順位", range(1, len(df) + 1)) # 一番左の列に順位を追加
 
+    # csvファイル出力
     df.to_csv(file_path, index=False)
 
-    if len(app_name) >= 10: # 10件以上取得できた場合は正常に取得できた判定
+# web情報を取得
+url = 'https://apps.apple.com/jp/iphone/charts/36?chart=top-free'
+res = get_web_info(url)
+
+# web情報の抽出
+if res is not None:
+    app_name = extract_web_info(res)
+    output_web_info(app_name)
+
+    # 10件以上取得できた場合は正常に取得できた判定
+    if len(app_name) >= 10: 
         print("web情報取得を成功しました。")
     else:
         print("取得件数が異常です。HTML構造変更の可能性あり。")
